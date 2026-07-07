@@ -20,6 +20,9 @@ from vinylsplit.wizard.pages import (
     WelcomePage,
 )
 from vinylsplit.wizard.pages.page_ids import PageId
+from vinylsplit.wizard.ui_style import apply_wizard_theme, finish_button_label
+
+_logger = logging.getLogger(__name__)
 
 
 class VinylSplitWizard(QWizard):
@@ -41,9 +44,12 @@ class VinylSplitWizard(QWizard):
         self.setOption(QWizard.WizardOption.NoBackButtonOnStartPage, True)
         self.setOption(QWizard.WizardOption.NoCancelButton, False)
         self.setOption(QWizard.WizardOption.NoDefaultButton, False)
+        self.setMinimumSize(920, 680)
+        apply_wizard_theme(self)
 
         self._register_pages()
         self._configure_navigation()
+        self.currentIdChanged.connect(self._on_page_changed)
 
         self._logger.info("Wizard initialized with %d pages", PageId.FINISH + 1)
 
@@ -74,12 +80,20 @@ class VinylSplitWizard(QWizard):
             self.setPage(page_cls.PAGE_ID, page)
 
     def _configure_navigation(self) -> None:
-        """Set linear page flow for v0.1.
+        """Set linear page flow for v0.5.
 
         Pages use sequential :class:`~vinylsplit.wizard.pages.page_ids.PageId`
         values so QWizard's default ``nextId()`` advances 0 → 6 in order.
         """
         self.setStartId(PageId.WELCOME)
+
+    def _on_page_changed(self, page_id: int) -> None:
+        """Refresh wizard button labels when the active page changes."""
+        if page_id == PageId.FINISH:
+            finish_button = self.button(QWizard.WizardButton.FinishButton)
+            finish_button.setText(
+                finish_button_label(export_completed=self.session.export_completed)
+            )
 
     def set_window_icon(self, icon: QIcon) -> None:
         """Apply a window icon from compiled resources or assets."""

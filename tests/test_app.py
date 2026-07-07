@@ -8,7 +8,7 @@ from vinylsplit.wizard.pages.page_ids import PageId
 
 
 def test_package_metadata() -> None:
-    assert __version__ == "0.1.0"
+    assert __version__ == "0.5.2"
     assert "VinylSplit" in __app_name__
 
 

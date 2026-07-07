@@ -16,11 +16,17 @@ from vinylsplit.audacity.connection import (
 from vinylsplit.core.container import Container
 from vinylsplit.wizard.pages.base import WizardPageBase
 from vinylsplit.wizard.pages.page_ids import PageId
+from vinylsplit.wizard.ui_style import (
+    connection_status_text,
+    create_section_group,
+    create_status_label,
+    style_primary_button,
+)
 
 _logger = logging.getLogger(__name__)
 
-_STATUS_CONNECTED = "🟢 Connected"
-_STATUS_NOT_CONNECTED = "🔴 Not Connected"
+_STATUS_CONNECTED = connection_status_text(connected=True)
+_STATUS_NOT_CONNECTED = connection_status_text(connected=False)
 
 
 class _ConnectionWorker(QThread):
@@ -46,7 +52,7 @@ class WelcomePage(WizardPageBase):
     PAGE_ID: ClassVar[int] = PageId.WELCOME
     PAGE_TITLE: ClassVar[str] = "Welcome"
     PAGE_SUBTITLE: ClassVar[str] = (
-        "Split your vinyl recording into tracks using MusicBrainz metadata."
+        "Generate a complete album layout in Audacity from MusicBrainz metadata."
     )
 
     def __init__(
@@ -62,17 +68,17 @@ class WelcomePage(WizardPageBase):
 
     def build_content(self) -> None:
         self._layout.addWidget(
-            self._create_placeholder_label(
+            self._create_info_banner(
                 "<b>Welcome to VinylSplit for Audacity</b><br><br>"
                 "This wizard will guide you through:<br>"
                 "<ol>"
-                "<li>Searching for your album on MusicBrainz</li>"
-                "<li>Selecting the correct release</li>"
-                "<li>Reviewing the track listing</li>"
-                "<li>Placing labels in Audacity</li>"
-                "<li>Exporting individual tracks</li>"
+                "<li>Search MusicBrainz and select your release</li>"
+                "<li>Review the official track listing</li>"
+                "<li>Generate track regions in Audacity</li>"
+                "<li>Adjust boundaries and refresh the layout</li>"
+                "<li>Export tagged tracks with album artwork</li>"
                 "</ol>"
-                "Click <b>Next</b> to begin."
+                "Connect to Audacity below, then click <b>Next</b>."
             )
         )
 
@@ -80,13 +86,15 @@ class WelcomePage(WizardPageBase):
 
     def _build_audacity_connection_section(self) -> QWidget:
         """Build the Audacity connection status and controls."""
-        section = QWidget()
+        section = create_section_group("Audacity Connection")
         layout = QVBoxLayout(section)
+        layout.setSpacing(10)
 
-        layout.addWidget(self._create_placeholder_label("<b>Audacity Connection</b>"))
+        self._status_label = create_status_label(tone="neutral")
+        self._status_label.setText(_STATUS_NOT_CONNECTED)
 
-        self._status_label = QLabel(_STATUS_NOT_CONNECTED)
-        self._connect_button = QPushButton("Connect")
+        self._connect_button = QPushButton()
+        style_primary_button(self._connect_button, "Connect")
         self._connect_button.clicked.connect(self._on_connect_clicked)
 
         self._message_label = QLabel("")
@@ -98,7 +106,6 @@ class WelcomePage(WizardPageBase):
         layout.addWidget(self._status_label)
         layout.addWidget(self._connect_button)
         layout.addWidget(self._message_label)
-
         return section
 
     def _on_connect_clicked(self) -> None:
@@ -141,6 +148,11 @@ class WelcomePage(WizardPageBase):
         self._status_label.setText(
             _STATUS_CONNECTED if connected else _STATUS_NOT_CONNECTED
         )
+        self._status_label.setObjectName(
+            "StatusSuccess" if connected else "StatusError"
+        )
+        self._status_label.style().unpolish(self._status_label)
+        self._status_label.style().polish(self._status_label)
 
     def is_audacity_connected(self) -> bool:
         """Return whether Audacity communication is available."""

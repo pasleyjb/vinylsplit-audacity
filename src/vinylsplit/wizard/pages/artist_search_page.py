@@ -9,11 +9,8 @@ from typing import ClassVar
 
 from PySide6.QtCore import QObject, Qt, QThread, Signal
 from PySide6.QtWidgets import (
-    QAbstractItemView,
     QFormLayout,
     QHBoxLayout,
-    QHeaderView,
-    QLabel,
     QLineEdit,
     QProgressBar,
     QPushButton,
@@ -29,6 +26,11 @@ from vinylsplit.musicbrainz.client import MusicBrainzClient
 from vinylsplit.musicbrainz.exceptions import MusicBrainzError
 from vinylsplit.wizard.pages.base import WizardPageBase
 from vinylsplit.wizard.pages.page_ids import PageId
+from vinylsplit.wizard.ui_style import (
+    configure_data_table,
+    create_status_label,
+    style_primary_button,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -140,6 +142,14 @@ class ArtistSearchPage(WizardPageBase):
         super().__init__(container, parent)
 
     def build_content(self) -> None:
+        self._layout.addWidget(
+            self._create_info_banner(
+                "<b>Search MusicBrainz</b><br>"
+                "Enter the artist and album you are digitizing, then select the "
+                "release that matches your vinyl pressing."
+            )
+        )
+
         form = QFormLayout()
         self.artist_input = QLineEdit()
         self.artist_input.setPlaceholderText("e.g. Pink Floyd")
@@ -151,7 +161,8 @@ class ArtistSearchPage(WizardPageBase):
         self._layout.addLayout(form)
 
         controls = QHBoxLayout()
-        self._search_button = QPushButton("Search")
+        self._search_button = QPushButton()
+        style_primary_button(self._search_button, "Search")
         self._search_button.clicked.connect(self._on_search_clicked)
         controls.addWidget(self._search_button)
         controls.addStretch()
@@ -162,26 +173,14 @@ class ArtistSearchPage(WizardPageBase):
         self._progress_bar.setVisible(False)
         self._layout.addWidget(self._progress_bar)
 
-        self._status_label = QLabel("")
-        self._status_label.setWordWrap(True)
+        self._status_label = create_status_label()
         self._layout.addWidget(self._status_label)
 
         self._results_table = QTableWidget(0, len(_TABLE_COLUMNS))
         self._results_table.setHorizontalHeaderLabels(_TABLE_COLUMNS)
-        self._results_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        self._results_table.setSelectionMode(
-            QAbstractItemView.SelectionMode.SingleSelection
-        )
-        self._results_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self._results_table.verticalHeader().setVisible(False)
-        header = self._results_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        configure_data_table(self._results_table)
         self._results_table.itemSelectionChanged.connect(self._on_selection_changed)
         self._layout.addWidget(self._results_table)
-
-        self._restore_search_fields()
 
     @property
     def musicbrainz(self) -> MusicBrainzClient:
@@ -199,23 +198,12 @@ class ArtistSearchPage(WizardPageBase):
         self._restore_search_fields()
         self.completeChanged.emit()
 
-    def cleanupPage(self) -> None:
-        settings = self.container.settings
-        settings.set(settings.KEY_LAST_ARTIST, self.artist_input.text().strip())
-        settings.set(settings.KEY_LAST_ALBUM, self.album_input.text().strip())
-        settings.sync()
-        super().cleanupPage()
-
     def _restore_search_fields(self) -> None:
-        settings = self.container.settings
-        if not self.artist_input.text():
-            last_artist = settings.get(settings.KEY_LAST_ARTIST, "")
-            if last_artist:
-                self.artist_input.setText(str(last_artist))
-        if not self.album_input.text():
-            last_album = settings.get(settings.KEY_LAST_ALBUM, "")
-            if last_album:
-                self.album_input.setText(str(last_album))
+        """Restore in-session search terms when navigating back within the wizard."""
+        if not self.artist_input.text() and self.session.last_artist_query:
+            self.artist_input.setText(self.session.last_artist_query)
+        if not self.album_input.text() and self.session.last_album_query:
+            self.album_input.setText(self.session.last_album_query)
 
     def _on_search_clicked(self) -> None:
         if self._search_worker is not None and self._search_worker.isRunning():

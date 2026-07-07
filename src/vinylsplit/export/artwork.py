@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 import requests
 
@@ -87,6 +88,50 @@ def fetch_release_artwork(
         source_url=image_url,
     )
     return ArtworkFetchResult(artwork, "Album artwork loaded.")
+
+
+_MIME_EXTENSIONS = {
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
+
+
+def artwork_file_extension(mime_type: str | None) -> str:
+    """Return a file extension for cover art based on its MIME type."""
+    if mime_type:
+        extension = _MIME_EXTENSIONS.get(mime_type.lower())
+        if extension is not None:
+            return extension
+    return ".jpg"
+
+
+def write_album_folder_artwork(
+    directory: Path,
+    artwork: AlbumArtwork,
+) -> Path | None:
+    """Write cover art into an album folder for display and folder thumbnails."""
+    if not artwork.is_available or not artwork.data:
+        return None
+
+    directory.mkdir(parents=True, exist_ok=True)
+    cover_path = directory / f"cover{artwork_file_extension(artwork.mime_type)}"
+    cover_path.write_bytes(artwork.data)
+
+    if cover_path.suffix.lower() in {".jpg", ".jpeg"}:
+        folder_path = directory / "folder.jpg"
+        if folder_path != cover_path:
+            folder_path.write_bytes(artwork.data)
+
+    directory_file = directory / ".directory"
+    directory_file.write_text(
+        "[Desktop Entry]\n"
+        f"Icon={cover_path.name}\n"
+        "Type=Directory\n",
+        encoding="utf-8",
+    )
+    return cover_path
 
 
 def _select_front_image(payload: object) -> dict[str, object] | None:

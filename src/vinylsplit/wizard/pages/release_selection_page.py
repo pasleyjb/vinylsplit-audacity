@@ -8,9 +8,7 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from PySide6.QtCore import QObject, Qt, QThread, Signal
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QHeaderView,
     QLabel,
     QListWidget,
     QListWidgetItem,
@@ -25,7 +23,6 @@ from vinylsplit.metadata.models import Release, ReleaseSummary, Track
 
 from vinylsplit.metadata.tracks import (
     flatten_tracks,
-    format_numbered_track_list,
     format_track_length,
     format_track_number,
 )
@@ -33,6 +30,7 @@ from vinylsplit.musicbrainz.client import MusicBrainzClient
 from vinylsplit.musicbrainz.exceptions import MusicBrainzError
 from vinylsplit.wizard.pages.base import WizardPageBase
 from vinylsplit.wizard.pages.page_ids import PageId
+from vinylsplit.wizard.ui_style import configure_data_table, create_status_label
 
 _logger = logging.getLogger(__name__)
 
@@ -99,7 +97,11 @@ class ReleaseSelectionPage(WizardPageBase):
 
     def build_content(self) -> None:
         self._layout.addWidget(
-            self._create_placeholder_label("<b>Available Releases</b>")
+            self._create_info_banner(
+                "<b>Available Releases</b><br>"
+                "Select the release that matches your vinyl pressing and review "
+                "its official track listing below."
+            )
         )
 
         self.release_list = QListWidget()
@@ -111,27 +113,16 @@ class ReleaseSelectionPage(WizardPageBase):
         self._progress_bar.setVisible(False)
         self._layout.addWidget(self._progress_bar)
 
-        self._status_label = QLabel("")
-        self._status_label.setWordWrap(True)
+        self._status_label = create_status_label()
         self._layout.addWidget(self._status_label)
 
         self._release_summary_label = QLabel("")
         self._release_summary_label.setWordWrap(True)
         self._layout.addWidget(self._release_summary_label)
 
-        self._track_list_label = QLabel("")
-        self._track_list_label.setWordWrap(True)
-        mono_font = QFont("Monospace")
-        mono_font.setStyleHint(QFont.StyleHint.Monospace)
-        self._track_list_label.setFont(mono_font)
-        self._layout.addWidget(self._track_list_label)
-
         self._track_table = QTableWidget(0, len(_TRACK_TABLE_COLUMNS))
         self._track_table.setHorizontalHeaderLabels(_TRACK_TABLE_COLUMNS)
-        self._track_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self._track_table.verticalHeader().setVisible(False)
-        header = self._track_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        configure_data_table(self._track_table)
         self._layout.addWidget(self._track_table)
 
     @property
@@ -241,7 +232,6 @@ class ReleaseSelectionPage(WizardPageBase):
             f"<b>{release.artist_name}</b> — {release.title} "
             f"({release.release_year}, {release.country or '—'})"
         )
-        self._track_list_label.setText(format_numbered_track_list(release))
         self._populate_track_table(tracks)
         self._status_label.setText(
             f"Loaded {len(tracks)} official track(s) from MusicBrainz."
@@ -260,7 +250,6 @@ class ReleaseSelectionPage(WizardPageBase):
 
     def _clear_track_display(self) -> None:
         self._release_summary_label.clear()
-        self._track_list_label.clear()
         self._track_table.setRowCount(0)
 
     def _set_loading(

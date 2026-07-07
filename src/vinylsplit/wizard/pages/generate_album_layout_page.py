@@ -8,8 +8,6 @@ from typing import ClassVar
 
 from PySide6.QtCore import QObject, QThread, Signal
 from PySide6.QtWidgets import (
-    QHeaderView,
-    QLabel,
     QProgressBar,
     QPushButton,
     QTableWidget,
@@ -27,6 +25,11 @@ from vinylsplit.labels.layout_engine import TrackRegion
 from vinylsplit.labels.time_format import format_region_range
 from vinylsplit.wizard.pages.base import WizardPageBase
 from vinylsplit.wizard.pages.page_ids import PageId
+from vinylsplit.wizard.ui_style import (
+    configure_data_table,
+    create_status_label,
+    style_primary_button,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -85,7 +88,7 @@ class GenerateAlbumLayoutPage(WizardPageBase):
 
     def build_content(self) -> None:
         self._layout.addWidget(
-            self._create_placeholder_label(
+            self._create_info_banner(
                 "<b>Generate Initial Regions</b><br>"
                 "VinylSplit will create a complete album layout in Audacity "
                 "using cumulative track durations from MusicBrainz."
@@ -94,13 +97,11 @@ class GenerateAlbumLayoutPage(WizardPageBase):
 
         self._preview_table = QTableWidget(0, len(_PREVIEW_COLUMNS))
         self._preview_table.setHorizontalHeaderLabels(_PREVIEW_COLUMNS)
-        self._preview_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self._preview_table.verticalHeader().setVisible(False)
-        header = self._preview_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        configure_data_table(self._preview_table)
         self._layout.addWidget(self._preview_table)
 
-        self._generate_button = QPushButton("Generate Initial Regions")
+        self._generate_button = QPushButton()
+        style_primary_button(self._generate_button, "Generate Initial Regions")
         self._generate_button.clicked.connect(self._on_generate_clicked)
         self._layout.addWidget(self._generate_button)
 
@@ -110,8 +111,7 @@ class GenerateAlbumLayoutPage(WizardPageBase):
         self._progress_bar.setVisible(False)
         self._layout.addWidget(self._progress_bar)
 
-        self._status_label = QLabel("")
-        self._status_label.setWordWrap(True)
+        self._status_label = create_status_label()
         self._layout.addWidget(self._status_label)
 
     @property

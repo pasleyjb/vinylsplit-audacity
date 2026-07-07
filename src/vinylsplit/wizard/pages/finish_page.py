@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QProgressBar,
     QPushButton,
+    QWizard,
     QWizardPage,
     QWidget,
 )
@@ -29,6 +30,15 @@ from vinylsplit.export.models import AlbumExportResult, ExportSettings
 from vinylsplit.metadata.session import ExportFormat
 from vinylsplit.wizard.pages.base import WizardPageBase
 from vinylsplit.wizard.pages.page_ids import PageId
+from vinylsplit.wizard.ui_style import (
+    artwork_preview_pixmap,
+    build_artwork_preview_panel,
+    create_section_group,
+    create_status_label,
+    finish_button_label,
+    style_primary_button,
+    style_secondary_button,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -99,18 +109,30 @@ class FinishPage(WizardPageBase):
         super().__init__(container, parent)
 
     def build_content(self) -> None:
-        self._summary_label = self._create_placeholder_label("")
+        self._summary_label = self._create_info_banner("")
         self._layout.addWidget(self._summary_label)
 
-        form = QFormLayout()
+        content_row = QWidget()
+        content_layout = QHBoxLayout(content_row)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(16)
+
+        export_group = create_section_group("Export Settings")
+        form = QFormLayout(export_group)
+        form.setSpacing(10)
+
         self._format_combo = QComboBox()
         for export_format in ExportFormat:
             self._format_combo.addItem(export_format.value.upper(), export_format)
+        flac_index = self._format_combo.findData(ExportFormat.FLAC)
+        if flac_index >= 0:
+            self._format_combo.setCurrentIndex(flac_index)
         form.addRow("Format:", self._format_combo)
 
         self._output_path_label = QLabel("Not selected")
         self._output_path_label.setWordWrap(True)
-        self._browse_button = QPushButton("Choose Folder…")
+        self._browse_button = QPushButton()
+        style_secondary_button(self._browse_button, "Choose Folder…")
         self._browse_button.clicked.connect(self._on_browse_clicked)
         output_row = QWidget()
         output_layout = QHBoxLayout(output_row)
@@ -119,13 +141,25 @@ class FinishPage(WizardPageBase):
         output_layout.addWidget(self._browse_button)
         form.addRow("Output folder:", output_row)
 
-        self._layout.addLayout(form)
+        self._hint_label = create_status_label(tone="muted")
+        self._hint_label.setText(
+            "Choose a format and output folder. Tracks are saved in an album "
+            "subfolder with cover art, then press Export Tracks or Finish."
+        )
+        form.addRow(self._hint_label)
 
-        self._artwork_label = QLabel("")
-        self._artwork_label.setWordWrap(True)
-        self._layout.addWidget(self._artwork_label)
+        content_layout.addWidget(export_group, stretch=1)
 
-        self._export_button = QPushButton("Export Tracks")
+        artwork_panel, image_label, caption_label = build_artwork_preview_panel()
+        self._artwork_panel = artwork_panel
+        self._artwork_image_label = image_label
+        self._artwork_caption_label = caption_label
+        content_layout.addWidget(artwork_panel)
+
+        self._layout.addWidget(content_row)
+
+        self._export_button = QPushButton()
+        style_primary_button(self._export_button, "Export Tracks")
         self._export_button.clicked.connect(self._on_export_clicked)
         self._layout.addWidget(self._export_button)
 
@@ -135,8 +169,7 @@ class FinishPage(WizardPageBase):
         self._progress_bar.setVisible(False)
         self._layout.addWidget(self._progress_bar)
 
-        self._status_label = QLabel("")
-        self._status_label.setWordWrap(True)
+        self._status_label = create_status_label()
         self._layout.addWidget(self._status_label)
 
     @property
@@ -149,9 +182,10 @@ class FinishPage(WizardPageBase):
         super().initializePage()
         self._restore_export_settings()
         self._update_summary()
-        self._update_artwork_status()
+        self._update_artwork_preview()
         if self._prefetch_artwork:
             self._prefetch_artwork_async()
+        self._update_wizard_finish_button()
         self.completeChanged.emit()
 
     def cleanupPage(self) -> None:
@@ -188,6 +222,7 @@ class FinishPage(WizardPageBase):
                 "<b>All Done!</b><br><br>"
                 "No release was selected during this session."
             )
+            self._hint_label.setVisible(False)
             return
 
         elapsed_text = "—"
@@ -203,6 +238,9 @@ class FinishPage(WizardPageBase):
                 f"Exported <b>{self.session.exported_track_count}</b> track(s) "
                 "with embedded metadata and artwork."
             )
+            self._hint_label.setVisible(False)
+        else:
+            self._hint_label.setVisible(True)
 
         self._summary_label.setText(
             "<b>Album Layout Complete</b><br><br>"
@@ -213,14 +251,36 @@ class FinishPage(WizardPageBase):
             f"{export_note}"
         )
 
-    def _update_artwork_status(self) -> None:
+    def _update_artwork_preview(self) -> None:
         artwork = self.session.album_artwork
-        if artwork is not None and artwork.is_available:
-            self._artwork_label.setText("Album artwork is ready for embedding.")
-            return
-        self._artwork_label.setText(
-            "Album artwork will be downloaded from Cover Art Archive during export."
+        if artwork is not None and artwork.is_available and artwork.data:
+            pixmap = artwork_preview_pixmap(artwork.data)
+            if not pixmap.isNull():
+                self._artwork_image_label.setPixmap(pixmap)
+                self._artwork_image_label.setText("")
+                self._set_artwork_caption(
+                    "Album artwork is ready for embedding.",
+                    tone="success",
+                )
+                return
+
+        self._artwork_image_label.clear()
+        self._artwork_image_label.setText("No artwork yet")
+        self._set_artwork_caption(
+            "Album artwork will be downloaded from Cover Art Archive during export.",
+            tone="muted",
         )
+
+    def _set_artwork_caption(self, text: str, *, tone: str) -> None:
+        self._artwork_caption_label.setText(text)
+        object_name = {
+            "success": "StatusSuccess",
+            "error": "StatusError",
+            "neutral": "StatusNeutral",
+        }.get(tone, "StatusMuted")
+        self._artwork_caption_label.setObjectName(object_name)
+        self._artwork_caption_label.style().unpolish(self._artwork_caption_label)
+        self._artwork_caption_label.style().polish(self._artwork_caption_label)
 
     def _prefetch_artwork_async(self) -> None:
         release = self.session.selected_release
@@ -242,9 +302,10 @@ class FinishPage(WizardPageBase):
             return
         if result.artwork is not None and result.artwork.is_available:
             self.session.set_album_artwork(result.artwork)
-            self._artwork_label.setText(result.message)
+            self._update_artwork_preview()
+            self._set_artwork_caption(result.message, tone="success")
         else:
-            self._artwork_label.setText(result.message)
+            self._set_artwork_caption(result.message, tone="muted")
 
     def _on_browse_clicked(self) -> None:
         current = self.session.output_directory
@@ -272,17 +333,17 @@ class FinishPage(WizardPageBase):
         """Validate settings, export every track, and update session state."""
         release = self.session.selected_release
         if release is None:
-            self._status_label.setText("No release is selected.")
+            self._set_status("No release is selected.", tone="error")
             return False
 
         output_directory = self.session.output_directory
         if output_directory is None:
-            self._status_label.setText("Choose an output folder before exporting.")
+            self._set_status("Choose an output folder before exporting.", tone="error")
             return False
 
         export_format = self._selected_export_format()
         if export_format is None:
-            self._status_label.setText("Choose a valid export format.")
+            self._set_status("Choose a valid export format.", tone="error")
             return False
 
         self.session.set_export_format(export_format)
@@ -308,17 +369,17 @@ class FinishPage(WizardPageBase):
     def _start_async_export(self) -> None:
         release = self.session.selected_release
         if release is None:
-            self._status_label.setText("No release is selected.")
+            self._set_status("No release is selected.", tone="error")
             return
 
         output_directory = self.session.output_directory
         if output_directory is None:
-            self._status_label.setText("Choose an output folder before exporting.")
+            self._set_status("Choose an output folder before exporting.", tone="error")
             return
 
         export_format = self._selected_export_format()
         if export_format is None:
-            self._status_label.setText("Choose a valid export format.")
+            self._set_status("Choose a valid export format.", tone="error")
             return
 
         self.session.set_export_format(export_format)
@@ -364,7 +425,7 @@ class FinishPage(WizardPageBase):
         if total > 0:
             self._progress_bar.setMaximum(total)
             self._progress_bar.setValue(current)
-            self._status_label.setText(f"Exporting track {current} of {total}…")
+            self._set_status(f"Exporting track {current} of {total}…", tone="neutral")
 
     def _on_export_finished(self, result: object) -> None:
         self._set_export_loading(False)
@@ -373,24 +434,45 @@ class FinishPage(WizardPageBase):
 
     def _apply_export_result(self, result: object) -> None:
         if not isinstance(result, AlbumExportResult):
-            self._status_label.setText("Export failed.")
+            self._set_status("Export failed.", tone="error")
             return
 
         if not result.success:
             self.session.add_validation_error(result.message)
-            self._status_label.setText(result.message)
+            self._set_status(result.message, tone="error")
             return
 
         self.session.clear_validation_errors()
         self.session.mark_export_completed(result.tracks_exported)
-        self._status_label.setText(result.message)
+        self._set_status(result.message, tone="success")
         self._update_summary()
+        self._update_wizard_finish_button()
         self.completeChanged.emit()
         _logger.info("Exported %d track(s)", result.tracks_exported)
 
     def apply_export_result(self, result: AlbumExportResult) -> None:
         """Apply an export result directly (used in tests)."""
         self._apply_export_result(result)
+
+    def _set_status(self, text: str, *, tone: str = "muted") -> None:
+        self._status_label.setText(text)
+        object_name = {
+            "success": "StatusSuccess",
+            "error": "StatusError",
+            "neutral": "StatusNeutral",
+        }.get(tone, "StatusMuted")
+        self._status_label.setObjectName(object_name)
+        self._status_label.style().unpolish(self._status_label)
+        self._status_label.style().polish(self._status_label)
+
+    def _update_wizard_finish_button(self) -> None:
+        wizard = self.wizard()
+        if wizard is None:
+            return
+        finish_button = wizard.button(QWizard.WizardButton.FinishButton)
+        finish_button.setText(
+            finish_button_label(export_completed=self.session.export_completed)
+        )
 
     def _set_export_loading(self, loading: bool, *, total: int = 0) -> None:
         self._progress_bar.setVisible(loading)

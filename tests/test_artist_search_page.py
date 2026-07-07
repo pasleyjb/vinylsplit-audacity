@@ -157,6 +157,24 @@ def test_search_button_runs_in_background(
     assert page._progress_bar.isVisible() is False
 
 
+def test_restore_search_fields_uses_session_not_persisted_settings(
+    search_page: ArtistSearchPage,
+    session: WizardSession,
+    container,
+) -> None:
+    container.settings.set(container.settings.KEY_LAST_ARTIST, "Bad Religion")
+    container.settings.set(container.settings.KEY_LAST_ALBUM, "No Control")
+    session.last_artist_query = "Pink Floyd"
+    session.last_album_query = "Wish You Were Here"
+
+    search_page.artist_input.clear()
+    search_page.album_input.clear()
+    search_page._restore_search_fields()
+
+    assert search_page.artist_input.text() == "Pink Floyd"
+    assert search_page.album_input.text() == "Wish You Were Here"
+
+
 def test_container_injects_session_and_registers_musicbrainz(container) -> None:
     assert isinstance(container.session, WizardSession)
     assert isinstance(container.resolve("musicbrainz"), MusicBrainzClient)

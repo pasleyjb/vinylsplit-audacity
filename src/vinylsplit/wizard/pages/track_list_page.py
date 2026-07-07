@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import QTableWidget, QTableWidgetItem
 
 from vinylsplit.metadata.tracks import format_numbered_track_line, format_track_length
 from vinylsplit.wizard.pages.base import WizardPageBase
 from vinylsplit.wizard.pages.page_ids import PageId
+from vinylsplit.wizard.ui_style import configure_data_table
 
 _TABLE_COLUMNS = ["#", "Title", "Duration"]
 
@@ -24,7 +25,7 @@ class TrackListPage(WizardPageBase):
 
     def build_content(self) -> None:
         self._layout.addWidget(
-            self._create_placeholder_label(
+            self._create_info_banner(
                 "<b>Review Track List</b><br>"
                 "Confirm the official track listing before generating the "
                 "initial album layout in Audacity."
@@ -33,10 +34,7 @@ class TrackListPage(WizardPageBase):
 
         self.track_table = QTableWidget(0, len(_TABLE_COLUMNS))
         self.track_table.setHorizontalHeaderLabels(_TABLE_COLUMNS)
-        self.track_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.track_table.verticalHeader().setVisible(False)
-        header = self.track_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        configure_data_table(self.track_table)
         self._layout.addWidget(self.track_table)
 
     def isComplete(self) -> bool:

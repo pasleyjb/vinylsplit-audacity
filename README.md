@@ -1,12 +1,12 @@
 # VinylSplit for Audacity
 
-**Version 0.1** — Foundation release
+**Version 0.5.2** — Album layout generator
 
-VinylSplit for Audacity helps users digitize vinyl records by guiding them through splitting tracks inside Audacity using MusicBrainz metadata.
+VinylSplit for Audacity helps users digitize vinyl records by generating a complete album layout in Audacity from MusicBrainz metadata, then exporting tagged tracks with artwork.
 
 ## Status
 
-This is an early foundation release. The wizard UI launches with placeholder pages. MusicBrainz integration, Audacity automation, and export workflows are planned for future versions.
+Version 0.5.2 provides the full workflow: MusicBrainz lookup, region layout generation, layout review, and export with embedded metadata and cover art into album subfolders.
 
 ## Requirements
 

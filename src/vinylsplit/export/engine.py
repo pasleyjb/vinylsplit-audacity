@@ -7,9 +7,9 @@ from collections.abc import Callable
 from pathlib import Path
 
 from vinylsplit.audacity.client import AudacityClient, AudacityError
-from vinylsplit.export.artwork import fetch_release_artwork
+from vinylsplit.export.artwork import fetch_release_artwork, write_album_folder_artwork
 from vinylsplit.export.audacity_exporter import export_region_to_file
-from vinylsplit.export.filenames import build_track_filename
+from vinylsplit.export.filenames import build_album_directory_name, build_track_filename
 from vinylsplit.export.metadata import build_export_regions, build_track_metadata
 from vinylsplit.export.models import AlbumExportResult, ExportSettings, TrackExportResult
 from vinylsplit.export.tagger import embed_track_metadata
@@ -38,7 +38,7 @@ class ExportEngine:
         fetch_artwork_if_missing: bool = True,
         progress_callback: ProgressCallback | None = None,
     ) -> AlbumExportResult:
-        """Export all labeled regions for *release* into *settings.output_directory*."""
+        """Export all labeled regions into an album subfolder of *settings.output_directory*."""
         if not self._client.is_connected():
             return AlbumExportResult(
                 success=False,
@@ -71,7 +71,16 @@ class ExportEngine:
             if resolved_artwork is None:
                 _logger.info("Continuing export without artwork: %s", artwork_result.message)
 
+        album_directory = (
+            settings.output_directory
+            / build_album_directory_name(release.title)
+        )
         settings.output_directory.mkdir(parents=True, exist_ok=True)
+        album_directory.mkdir(parents=True, exist_ok=True)
+
+        if resolved_artwork is not None and resolved_artwork.is_available:
+            write_album_folder_artwork(album_directory, resolved_artwork)
+
         track_results: list[TrackExportResult] = []
         exported = 0
         total = len(export_regions)
@@ -83,7 +92,7 @@ class ExportEngine:
                 region.title,
                 settings.export_format,
             )
-            output_path = settings.output_directory / filename
+            output_path = album_directory / filename
 
             export_result = export_region_to_file(
                 self._client,
@@ -96,7 +105,7 @@ class ExportEngine:
                     success=False,
                     message=export_result.message,
                     tracks_exported=exported,
-                    output_directory=settings.output_directory,
+                    output_directory=album_directory,
                     track_results=tuple(track_results),
                 )
 
@@ -120,7 +129,7 @@ class ExportEngine:
                     success=False,
                     message=str(exc),
                     tracks_exported=exported,
-                    output_directory=settings.output_directory,
+                    output_directory=album_directory,
                     track_results=tuple(track_results),
                 )
 
@@ -131,9 +140,9 @@ class ExportEngine:
 
         return AlbumExportResult(
             success=True,
-            message=f"Exported {exported} track(s) to {settings.output_directory}.",
+            message=f"Exported {exported} track(s) to {album_directory}.",
             tracks_exported=exported,
-            output_directory=settings.output_directory,
+            output_directory=album_directory,
             track_results=tuple(track_results),
         )
 

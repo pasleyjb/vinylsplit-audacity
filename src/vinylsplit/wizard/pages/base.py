@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWizardPage
 
 from vinylsplit.core.container import Container
 from vinylsplit.metadata.session import WizardSession
+from vinylsplit.wizard.ui_style import apply_page_layout, create_info_banner
 
 
 class WizardPageBase(QWizardPage):
@@ -39,8 +40,10 @@ class WizardPageBase(QWizardPage):
             self.setSubTitle(self.PAGE_SUBTITLE)
 
         self._layout = QVBoxLayout()
+        apply_page_layout(self._layout)
         self.setLayout(self._layout)
         self.build_content()
+        self._add_page_stretch()
 
     @property
     def container(self) -> Container:
@@ -54,7 +57,7 @@ class WizardPageBase(QWizardPage):
 
     def build_content(self) -> None:
         """Build page content. Override in subclasses."""
-        self._layout.addWidget(self._create_placeholder_label())
+        self._layout.addWidget(self._create_body_label())
 
     def load_ui(self, ui_path: str) -> None:
         """Load a Qt Designer ``.ui`` file into this page.
@@ -78,22 +81,37 @@ class WizardPageBase(QWizardPage):
         if widget is not None:
             self._layout.addWidget(widget)
 
-    def _create_placeholder_label(self, text: str | None = None) -> QLabel:
-        """Create a styled placeholder label for v0.1 pages."""
-        label = QLabel(text or self._default_placeholder_text())
+    def _create_body_label(self, text: str | None = None) -> QLabel:
+        """Create a styled body copy label."""
+        if text is None:
+            label = create_info_banner(
+                f"<b>{self.PAGE_TITLE}</b><br>"
+                "Content for this step is not available."
+            )
+            return label
+        label = QLabel(text)
         label.setWordWrap(True)
         font = QFont()
-        font.setPointSize(11)
+        font.setPointSize(10)
         label.setFont(font)
         return label
 
-    def _default_placeholder_text(self) -> str:
-        """Default placeholder copy for unimplemented page content."""
-        return (
-            f"<b>{self.PAGE_TITLE}</b><br><br>"
-            "This step is a placeholder in version 0.1. "
-            "Functionality will be added in a future release."
-        )
+    def _create_info_banner(self, text: str) -> QLabel:
+        """Create a highlighted instruction banner."""
+        return create_info_banner(text)
+
+    def _create_placeholder_label(self, text: str) -> QLabel:
+        """Backward-compatible alias used by older page implementations."""
+        if text.strip():
+            return self._create_info_banner(text)
+        label = QLabel("")
+        label.setWordWrap(True)
+        return label
+
+    def _add_page_stretch(self) -> None:
+        """Allow subclasses to opt out by setting ``_use_page_stretch = False``."""
+        if getattr(self, "_use_page_stretch", True):
+            self._layout.addStretch(1)
 
     def initializePage(self) -> None:
         """Called when the page is entered. Override to refresh data."""

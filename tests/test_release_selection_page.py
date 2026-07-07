@@ -97,8 +97,6 @@ def test_display_release_shows_numbered_tracks_and_table(
 ) -> None:
     release_page._display_release(_sample_release())
 
-    assert "01 Speak to Me" in release_page._track_list_label.text()
-    assert "02 Breathe" in release_page._track_list_label.text()
     assert release_page._track_table.rowCount() == 2
     assert release_page._track_table.item(0, 0).text() == "01"
     assert release_page._track_table.item(0, 1).text() == "Speak to Me"
