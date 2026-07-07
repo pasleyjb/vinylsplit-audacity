@@ -35,6 +35,18 @@ Or:
 python -m vinylsplit
 ```
 
+## Linux release build
+
+To create portable Linux artifacts (directory bundle, `.tar.gz`, and `.AppImage`):
+
+```bash
+pip install -e ".[packaging]"
+./packaging/linux/build.sh
+```
+
+Outputs land in `dist/`. See [packaging/linux/README.md](packaging/linux/README.md) for
+install instructions and Audacity prerequisites.
+
 ## Development
 
 ```bash

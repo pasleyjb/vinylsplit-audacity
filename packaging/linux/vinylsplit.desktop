@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=VinylSplit for Audacity
+Comment=Digitize vinyl with MusicBrainz metadata and Audacity regions
+Exec=vinylsplit
+Icon=vinylsplit
+Terminal=false
+Categories=AudioVideo;Utility;
+Keywords=audacity;vinyl;musicbrainz;digitize;split;
+StartupWMClass=vinylsplit
