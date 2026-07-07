@@ -13,7 +13,7 @@ def test_linear_next_ids(container) -> None:
         PageId.ARTIST_SEARCH,
         PageId.RELEASE_SELECTION,
         PageId.TRACK_LIST,
-        PageId.LABEL_PLACEMENT,
+        PageId.GENERATE_ALBUM_LAYOUT,
         PageId.REVIEW,
         PageId.FINISH,
     ]

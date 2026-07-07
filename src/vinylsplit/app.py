@@ -12,6 +12,7 @@ from vinylsplit import __app_name__, __version__
 from vinylsplit.core.container import Container
 from vinylsplit.core.logging_config import configure_logging
 from vinylsplit.core.settings import Settings
+from vinylsplit.metadata.session import WizardSession
 from vinylsplit.wizard import VinylSplitWizard
 
 logger = logging.getLogger(__name__)
@@ -71,7 +72,8 @@ def main(argv: list[str] | None = None) -> int:
     logger.info("Launching application")
 
     app = create_application(argv)
-    container = Container()
+    session = WizardSession()
+    container = Container(session=session)
     wizard = create_wizard(container)
     wizard.show()
 

@@ -9,6 +9,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWizardPage
 
 from vinylsplit.core.container import Container
+from vinylsplit.metadata.session import WizardSession
 
 
 class WizardPageBase(QWizardPage):
@@ -45,6 +46,11 @@ class WizardPageBase(QWizardPage):
     def container(self) -> Container:
         """Dependency injection container for this page."""
         return self._container
+
+    @property
+    def session(self) -> WizardSession:
+        """Wizard session state for cross-page communication."""
+        return self._container.session
 
     def build_content(self) -> None:
         """Build page content. Override in subclasses."""

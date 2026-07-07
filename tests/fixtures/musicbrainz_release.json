@@ -1,0 +1,44 @@
+{
+  "id": "release-mbid-1",
+  "title": "The Dark Side of the Moon",
+  "date": "1973-03-01",
+  "country": "GB",
+  "status": "Official",
+  "artist-credit": [
+    {
+      "name": "Pink Floyd",
+      "artist": {
+        "id": "artist-mbid-1",
+        "name": "Pink Floyd"
+      }
+    }
+  ],
+  "release-group": {
+    "id": "group-mbid-1",
+    "primary-type": "Album",
+    "secondary-types": []
+  },
+  "media": [
+    {
+      "position": 1,
+      "format": "Vinyl",
+      "track-count": 2,
+      "tracks": [
+        {
+          "id": "track-mbid-1",
+          "title": "Speak to Me",
+          "position": 1,
+          "number": "1",
+          "length": 90000
+        },
+        {
+          "id": "track-mbid-2",
+          "title": "Breathe",
+          "position": 2,
+          "number": "2",
+          "length": 163000
+        }
+      ]
+    }
+  ]
+}

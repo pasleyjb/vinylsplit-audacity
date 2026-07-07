@@ -1,13 +1,37 @@
 """Audacity integration layer.
 
-This package will provide bridges to Audacity for:
-
-- Detecting open projects via mod-script-pipe or future APIs
-- Reading and writing label tracks
-- Triggering export operations
-
-Version 0.1 contains no implementation; services register in
-:class:`~vinylsplit.core.container.Container` when ready.
+This package provides bridges to Audacity via mod-script-pipe for reading and
+writing label tracks and triggering export operations.
 """
 
-__all__: list[str] = []
+from vinylsplit.audacity.client import (
+    AudacityClient,
+    AudacityClientConfig,
+    AudacityCommandError,
+    AudacityConnectionError,
+    AudacityError,
+    AudacityNotConnectedError,
+    AudacityPipeBrokenError,
+    AudacityTimeoutError,
+    PipePaths,
+    detect_pipe_paths,
+)
+from vinylsplit.audacity.connection import (
+    AudacityConnectionResult,
+    verify_audacity_connection,
+)
+
+__all__ = [
+    "AudacityClient",
+    "AudacityClientConfig",
+    "AudacityCommandError",
+    "AudacityConnectionError",
+    "AudacityConnectionResult",
+    "AudacityError",
+    "AudacityNotConnectedError",
+    "AudacityPipeBrokenError",
+    "AudacityTimeoutError",
+    "PipePaths",
+    "detect_pipe_paths",
+    "verify_audacity_connection",
+]

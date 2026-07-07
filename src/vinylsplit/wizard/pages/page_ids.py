@@ -12,6 +12,6 @@ class PageId(IntEnum):
     ARTIST_SEARCH = 1
     RELEASE_SELECTION = 2
     TRACK_LIST = 3
-    LABEL_PLACEMENT = 4
+    GENERATE_ALBUM_LAYOUT = 4
     REVIEW = 5
     FINISH = 6

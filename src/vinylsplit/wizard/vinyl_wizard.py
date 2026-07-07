@@ -9,10 +9,11 @@ from PySide6.QtWidgets import QWizard
 
 from vinylsplit import __app_name__
 from vinylsplit.core.container import Container
+from vinylsplit.metadata.session import WizardSession
 from vinylsplit.wizard.pages import (
     ArtistSearchPage,
     FinishPage,
-    LabelPlacementPage,
+    GenerateAlbumLayoutPage,
     ReleaseSelectionPage,
     ReviewPage,
     TrackListPage,
@@ -39,6 +40,7 @@ class VinylSplitWizard(QWizard):
         self.setOption(QWizard.WizardOption.HaveHelpButton, False)
         self.setOption(QWizard.WizardOption.NoBackButtonOnStartPage, True)
         self.setOption(QWizard.WizardOption.NoCancelButton, False)
+        self.setOption(QWizard.WizardOption.NoDefaultButton, False)
 
         self._register_pages()
         self._configure_navigation()
@@ -50,6 +52,11 @@ class VinylSplitWizard(QWizard):
         """Dependency injection container shared by all pages."""
         return self._container
 
+    @property
+    def session(self) -> WizardSession:
+        """Wizard session state for the active workflow."""
+        return self._container.session
+
     def _register_pages(self) -> None:
         """Create and register all wizard pages."""
         page_classes = [
@@ -57,7 +64,7 @@ class VinylSplitWizard(QWizard):
             ArtistSearchPage,
             ReleaseSelectionPage,
             TrackListPage,
-            LabelPlacementPage,
+            GenerateAlbumLayoutPage,
             ReviewPage,
             FinishPage,
         ]
