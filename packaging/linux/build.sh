@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PACKAGING_DIR="${ROOT}/packaging/linux"
 DIST_DIR="${ROOT}/dist"
 BUILD_DIR="${ROOT}/build"
-VENV_PYTHON="${ROOT}/.venv/bin/python"
+PYTHON="${ROOT}/.venv/bin/python"
 APPIMAGE_TOOL_TAG="continuous"
 
 if [[ "$(uname -s)" != "Linux" ]]; then
@@ -24,20 +24,26 @@ case "${ARCH}" in
         ;;
 esac
 
-if [[ ! -x "${VENV_PYTHON}" ]]; then
-    echo "Create the project virtualenv first: python -m venv .venv && .venv/bin/pip install -e '.[dev,packaging]'" >&2
-    exit 1
+if [[ ! -x "${PYTHON}" ]]; then
+    if command -v python >/dev/null 2>&1; then
+        PYTHON="$(command -v python)"
+    elif command -v python3 >/dev/null 2>&1; then
+        PYTHON="$(command -v python3)"
+    else
+        echo "Python is required. Create a venv or install Python 3.14+." >&2
+        exit 1
+    fi
 fi
 
 echo "==> Installing packaging dependencies"
-"${VENV_PYTHON}" -m pip install -q -e "${ROOT}[packaging]"
+"${PYTHON}" -m pip install -q -e "${ROOT}[packaging]"
 
 if [[ ! -f "${PACKAGING_DIR}/vinylsplit.png" ]]; then
     echo "==> Generating application icon"
-    QT_QPA_PLATFORM=offscreen "${VENV_PYTHON}" "${PACKAGING_DIR}/generate_icon.py"
+    QT_QPA_PLATFORM=offscreen "${PYTHON}" "${PACKAGING_DIR}/generate_icon.py"
 fi
 
-VERSION="$("${VENV_PYTHON}" -c "from vinylsplit import __version__; print(__version__)")"
+VERSION="$("${PYTHON}" -c "from vinylsplit import __version__; print(__version__)")"
 BUNDLE_NAME="vinylsplit"
 RELEASE_BASE="${BUNDLE_NAME}-${VERSION}-linux-${ARCH_LABEL}"
 TARBALL_PATH="${DIST_DIR}/${RELEASE_BASE}.tar.gz"
@@ -48,7 +54,7 @@ echo "==> Building ${VERSION} for linux-${ARCH_LABEL}"
 rm -rf "${DIST_DIR}/${BUNDLE_NAME}" "${APPDIR_PATH}" "${APPIMAGE_PATH}"
 mkdir -p "${DIST_DIR}" "${BUILD_DIR}"
 
-"${VENV_PYTHON}" -m PyInstaller \
+"${PYTHON}" -m PyInstaller \
     "${PACKAGING_DIR}/vinylsplit.spec" \
     --distpath "${DIST_DIR}" \
     --workpath "${BUILD_DIR}/pyinstaller" \
