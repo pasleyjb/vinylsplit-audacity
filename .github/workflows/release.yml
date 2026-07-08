@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    name: Build and publish Linux artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[packaging]"
+
+      - name: Build release artifacts
+        run: chmod +x packaging/linux/build.sh && ./packaging/linux/build.sh
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ARCH="x86_64"
+          APPIMAGE="dist/vinylsplit-${VERSION}-linux-${ARCH}.AppImage"
+          TARBALL="dist/vinylsplit-${VERSION}-linux-${ARCH}.tar.gz"
+
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "VinylSplit ${VERSION}" \
+            --notes-file ".github/release-notes/${VERSION}.md" \
+            "${APPIMAGE}" \
+            "${TARBALL}"
