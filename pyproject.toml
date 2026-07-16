@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vinylsplit-audacity"
-version = "0.5.2"
+version = "1.0.0"
 description = "Guide vinyl digitization by splitting tracks in Audacity using MusicBrainz metadata."
 readme = "README.md"
 license = "MIT"
@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = ["audacity", "vinyl", "musicbrainz", "digitization"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: X11 Applications :: Qt",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",

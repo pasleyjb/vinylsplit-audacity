@@ -1,0 +1,70 @@
+name: vinylsplit
+base: core24
+version: '1.0.0'
+summary: Vinyl digitization helper for Audacity
+description: |
+  VinylSplit for Audacity helps digitize vinyl records by generating a
+  complete album layout in Audacity from MusicBrainz metadata, then
+  exporting tagged tracks with embedded artwork.
+
+  Prerequisites:
+    1. Install Audacity
+    2. Enable mod-script-pipe in Edit → Preferences → Modules
+    3. Restart Audacity, then launch VinylSplit
+
+  Classic confinement is required so VinylSplit can reach Audacity's
+  mod-script-pipe FIFOs under the host /tmp directory
+  (audacity_script_pipe.to.<uid> / audacity_script_pipe.from.<uid>).
+license: MIT
+grade: stable
+# Classic: host /tmp FIFOs for Audacity mod-script-pipe cannot be used
+# reliably from a strictly confined private /tmp mount namespace.
+confinement: classic
+compression: lzo
+
+architectures:
+  - build-on: amd64
+    build-for: amd64
+
+apps:
+  vinylsplit:
+    command: opt/vinylsplit/vinylsplit
+    desktop: meta/gui/vinylsplit.desktop
+    common-id: io.github.pasleyjb.vinylsplit
+    environment:
+      # Keep Qt/PyInstaller lookup next to the bundled payload.
+      VINYLSPLIT_SNAP: "1"
+
+parts:
+  vinylsplit:
+    plugin: dump
+    source: dist/vinylsplit
+    source-type: local
+    organize:
+      vinylsplit: opt/vinylsplit/vinylsplit
+      _internal: opt/vinylsplit/_internal
+    stage:
+      - opt/vinylsplit
+    prime:
+      - opt/vinylsplit
+    override-prime: |
+      craftctl default
+      # Drop portable desktop tree from the PyInstaller bundle; snap uses meta/gui.
+      rm -rf "$CRAFT_PRIME/opt/vinylsplit/share"
+
+  gui:
+    plugin: dump
+    source: snap/gui
+    source-type: local
+    organize:
+      vinylsplit.desktop: meta/gui/vinylsplit.desktop
+      vinylsplit.png: meta/gui/vinylsplit.png
+      vinylsplit.metainfo.xml: usr/share/metainfo/io.github.pasleyjb.vinylsplit.metainfo.xml
+    stage:
+      - meta/gui/vinylsplit.desktop
+      - meta/gui/vinylsplit.png
+      - usr/share/metainfo/io.github.pasleyjb.vinylsplit.metainfo.xml
+    prime:
+      - meta/gui/vinylsplit.desktop
+      - meta/gui/vinylsplit.png
+      - usr/share/metainfo/io.github.pasleyjb.vinylsplit.metainfo.xml

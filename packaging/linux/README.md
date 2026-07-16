@@ -24,6 +24,7 @@ Artifacts are written to `dist/`:
 | `vinylsplit-<version>-linux-<arch>.tar.gz` | Portable archive of the bundle |
 | `vinylsplit-<version>-linux-<arch>.AppImage` | Single-file portable app |
 | `vinylsplit_<version>-1_<debarch>.deb` | Debian/Ubuntu package (`amd64` / `arm64`) |
+| `vinylsplit_<version>_<snaparch>.snap` | Snap package (classic confinement) |
 
 Supported architectures: `x86_64` (`amd64`), `aarch64` (`arm64`).
 
@@ -37,10 +38,20 @@ If the PyInstaller bundle already exists under `dist/vinylsplit/`:
 
 Requires `dpkg-deb` (from the `dpkg` package).
 
+### Snap package only
+
+```bash
+./packaging/linux/build-snap.sh
+```
+
+Requires `mksquashfs` (`squashfs-tools`) or `snapcraft`. The snap uses
+**classic confinement** so it can reach Audacity’s mod-script-pipe FIFOs under
+the host `/tmp`.
+
 ## Install from tarball
 
 ```bash
-tar -xzf dist/vinylsplit-0.5.2-linux-x86_64.tar.gz -C ~/.local
+tar -xzf dist/vinylsplit-1.0.0-linux-x86_64.tar.gz -C ~/.local
 ~/.local/vinylsplit/vinylsplit
 ```
 
@@ -57,16 +68,16 @@ use the full executable path.
 ## Run AppImage
 
 ```bash
-chmod +x dist/vinylsplit-0.5.2-linux-x86_64.AppImage
-./dist/vinylsplit-0.5.2-linux-x86_64.AppImage
+chmod +x dist/vinylsplit-1.0.0-linux-x86_64.AppImage
+./dist/vinylsplit-1.0.0-linux-x86_64.AppImage
 ```
 
 ## Install from .deb
 
 ```bash
-sudo apt install ./dist/vinylsplit_0.5.2-1_amd64.deb
+sudo apt install ./dist/vinylsplit_1.0.0-1_amd64.deb
 # or:
-sudo dpkg -i dist/vinylsplit_0.5.2-1_amd64.deb
+sudo dpkg -i dist/vinylsplit_1.0.0-1_amd64.deb
 ```
 
 This installs:
@@ -83,6 +94,34 @@ Remove with:
 ```bash
 sudo apt remove vinylsplit
 ```
+
+## Install from Snap
+
+Local install (before store publication):
+
+```bash
+sudo snap install --dangerous --classic dist/vinylsplit_1.0.0_amd64.snap
+```
+
+From the Snap Store (after classic confinement is approved):
+
+```bash
+sudo snap install vinylsplit --classic
+```
+
+Remove with:
+
+```bash
+sudo snap remove vinylsplit
+```
+
+### Publishing to the Snap Store
+
+1. Create an account at https://snapcraft.io
+2. `snapcraft login` and `snapcraft register vinylsplit`
+3. Request classic confinement on the Snapcraft forum (`store-requests`) — required because of Audacity `/tmp` pipes
+4. `snapcraft upload --release=edge dist/vinylsplit_1.0.0_amd64.snap`
+5. Promote to `stable` after review
 
 ## End-user prerequisites
 

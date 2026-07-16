@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.pasleyjb.vinylsplit</id>
+  <name>VinylSplit for Audacity</name>
+  <summary>Vinyl digitization helper for Audacity</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <developer id="io.github.pasleyjb">
+    <name>VinylSplit Contributors</name>
+  </developer>
+  <description>
+    <p>
+      VinylSplit for Audacity helps digitize vinyl records by generating a
+      complete album layout in Audacity from MusicBrainz metadata, then
+      exporting tagged tracks with embedded artwork.
+    </p>
+    <p>
+      Requires a separate Audacity install with mod-script-pipe enabled.
+    </p>
+  </description>
+  <launchable type="desktop-id">vinylsplit.desktop</launchable>
+  <url type="homepage">https://github.com/pasleyjb/vinylsplit-audacity</url>
+  <url type="bugtracker">https://github.com/pasleyjb/vinylsplit-audacity/issues</url>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+    <category>Utility</category>
+  </categories>
+  <provides>
+    <binary>vinylsplit</binary>
+  </provides>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="1.0.0" date="2026-07-16">
+      <description>
+        <p>First stable release: full vinyl digitization workflow with Snap, Debian, AppImage, and tarball packages.</p>
+      </description>
+    </release>
+    <release version="0.5.2" date="2026-07-08">
+      <description>
+        <p>Album layout generator with MusicBrainz lookup, export, and Linux packaging.</p>
+      </description>
+    </release>
+  </releases>
+</component>

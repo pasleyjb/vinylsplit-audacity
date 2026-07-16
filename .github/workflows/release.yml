@@ -21,13 +21,18 @@ jobs:
         with:
           python-version: "3.14"
 
+      - name: Install system packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y squashfs-tools dpkg
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[packaging]"
 
       - name: Build release artifacts
-        run: chmod +x packaging/linux/build.sh && ./packaging/linux/build.sh
+        run: chmod +x packaging/linux/build.sh packaging/linux/build-deb.sh packaging/linux/build-snap.sh && ./packaging/linux/build.sh
 
       - name: Publish GitHub release
         env:
@@ -36,13 +41,16 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           ARCH="x86_64"
           DEB_ARCH="amd64"
+          SNAP_ARCH="amd64"
           APPIMAGE="dist/vinylsplit-${VERSION}-linux-${ARCH}.AppImage"
           TARBALL="dist/vinylsplit-${VERSION}-linux-${ARCH}.tar.gz"
           DEB="dist/vinylsplit_${VERSION}-1_${DEB_ARCH}.deb"
+          SNAP="dist/vinylsplit_${VERSION}_${SNAP_ARCH}.snap"
 
           gh release create "${GITHUB_REF_NAME}" \
             --title "VinylSplit ${VERSION}" \
             --notes-file ".github/release-notes/${VERSION}.md" \
             "${APPIMAGE}" \
             "${TARBALL}" \
-            "${DEB}"
+            "${DEB}" \
+            "${SNAP}"

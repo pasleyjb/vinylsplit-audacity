@@ -14,12 +14,15 @@ eggs/
 lib/
 lib64/
 parts/
+prime/
+stage/
 sdist/
 var/
 wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.snap
 
 # Virtual environments
 .venv/

@@ -131,6 +131,20 @@ else
     echo "==> Skipping .deb (dpkg-deb not found)"
 fi
 
+SNAP_PATH=""
+if command -v mksquashfs >/dev/null 2>&1 || command -v snapcraft >/dev/null 2>&1; then
+    echo "==> Creating Snap package"
+    "${PACKAGING_DIR}/build-snap.sh"
+    case "${ARCH_LABEL}" in
+        x86_64) _snap_arch="amd64" ;;
+        aarch64) _snap_arch="arm64" ;;
+        *) _snap_arch="${ARCH_LABEL}" ;;
+    esac
+    SNAP_PATH="${DIST_DIR}/vinylsplit_${VERSION}_${_snap_arch}.snap"
+else
+    echo "==> Skipping .snap (mksquashfs/snapcraft not found)"
+fi
+
 echo
 echo "Build complete:"
 echo "  Bundle:    ${BUNDLE_DIR}"
@@ -138,6 +152,9 @@ echo "  Tarball:   ${TARBALL_PATH}"
 echo "  AppImage:  ${APPIMAGE_PATH}"
 if [[ -n "${DEB_PATH}" && -f "${DEB_PATH}" ]]; then
     echo "  Deb:       ${DEB_PATH}"
+fi
+if [[ -n "${SNAP_PATH}" && -f "${SNAP_PATH}" ]]; then
+    echo "  Snap:      ${SNAP_PATH}"
 fi
 echo
 echo "Prerequisites for end users:"
