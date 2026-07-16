@@ -37,15 +37,21 @@ python -m vinylsplit
 
 ## Linux release build
 
-To create portable Linux artifacts (directory bundle, `.tar.gz`, and `.AppImage`):
+To create portable Linux artifacts (directory bundle, `.tar.gz`, `.AppImage`, and `.deb`):
 
 ```bash
 pip install -e ".[packaging]"
 ./packaging/linux/build.sh
 ```
 
-Outputs land in `dist/`. See [packaging/linux/README.md](packaging/linux/README.md) for
-install instructions and Audacity prerequisites.
+Outputs land in `dist/`. Install the Debian package with:
+
+```bash
+sudo apt install ./dist/vinylsplit_0.5.2-1_amd64.deb
+```
+
+See [packaging/linux/README.md](packaging/linux/README.md) for install instructions and
+Audacity prerequisites.
 
 ## Development
 

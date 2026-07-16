@@ -117,11 +117,28 @@ fi
 echo "==> Creating AppImage ${APPIMAGE_PATH}"
 ARCH="${ARCH}" "${APPIMAGE_TOOL}" "${APPDIR_PATH}" "${APPIMAGE_PATH}"
 
+DEB_PATH=""
+if command -v dpkg-deb >/dev/null 2>&1; then
+    echo "==> Creating Debian package"
+    "${PACKAGING_DIR}/build-deb.sh"
+    case "${ARCH_LABEL}" in
+        x86_64) _deb_arch="amd64" ;;
+        aarch64) _deb_arch="arm64" ;;
+        *) _deb_arch="${ARCH_LABEL}" ;;
+    esac
+    DEB_PATH="${DIST_DIR}/vinylsplit_${VERSION}-1_${_deb_arch}.deb"
+else
+    echo "==> Skipping .deb (dpkg-deb not found)"
+fi
+
 echo
 echo "Build complete:"
 echo "  Bundle:    ${BUNDLE_DIR}"
 echo "  Tarball:   ${TARBALL_PATH}"
 echo "  AppImage:  ${APPIMAGE_PATH}"
+if [[ -n "${DEB_PATH}" && -f "${DEB_PATH}" ]]; then
+    echo "  Deb:       ${DEB_PATH}"
+fi
 echo
 echo "Prerequisites for end users:"
 echo "  1. Install Audacity"

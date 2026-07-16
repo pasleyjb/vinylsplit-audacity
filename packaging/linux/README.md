@@ -23,8 +23,19 @@ Artifacts are written to `dist/`:
 | `vinylsplit/` | PyInstaller one-directory bundle |
 | `vinylsplit-<version>-linux-<arch>.tar.gz` | Portable archive of the bundle |
 | `vinylsplit-<version>-linux-<arch>.AppImage` | Single-file portable app |
+| `vinylsplit_<version>-1_<debarch>.deb` | Debian/Ubuntu package (`amd64` / `arm64`) |
 
-Supported architectures: `x86_64`, `aarch64`.
+Supported architectures: `x86_64` (`amd64`), `aarch64` (`arm64`).
+
+### Debian package only
+
+If the PyInstaller bundle already exists under `dist/vinylsplit/`:
+
+```bash
+./packaging/linux/build-deb.sh
+```
+
+Requires `dpkg-deb` (from the `dpkg` package).
 
 ## Install from tarball
 
@@ -48,6 +59,29 @@ use the full executable path.
 ```bash
 chmod +x dist/vinylsplit-0.5.2-linux-x86_64.AppImage
 ./dist/vinylsplit-0.5.2-linux-x86_64.AppImage
+```
+
+## Install from .deb
+
+```bash
+sudo apt install ./dist/vinylsplit_0.5.2-1_amd64.deb
+# or:
+sudo dpkg -i dist/vinylsplit_0.5.2-1_amd64.deb
+```
+
+This installs:
+
+| Path | Purpose |
+|------|---------|
+| `/opt/vinylsplit/` | Self-contained application bundle |
+| `/usr/bin/vinylsplit` | Launcher on `PATH` |
+| `/usr/share/applications/vinylsplit.desktop` | Desktop menu entry |
+| `/usr/share/icons/hicolor/256x256/apps/vinylsplit.png` | Application icon |
+
+Remove with:
+
+```bash
+sudo apt remove vinylsplit
 ```
 
 ## End-user prerequisites
