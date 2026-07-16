@@ -47,10 +47,28 @@ jobs:
           DEB="dist/vinylsplit_${VERSION}-1_${DEB_ARCH}.deb"
           SNAP="dist/vinylsplit_${VERSION}_${SNAP_ARCH}.snap"
 
-          gh release create "${GITHUB_REF_NAME}" \
-            --title "VinylSplit ${VERSION}" \
-            --notes-file ".github/release-notes/${VERSION}.md" \
-            "${APPIMAGE}" \
-            "${TARBALL}" \
-            "${DEB}" \
-            "${SNAP}"
+          NOTES=".github/release-notes/${VERSION}.md"
+          if [[ ! -f "${NOTES}" ]]; then
+            NOTES="$(mktemp)"
+            echo "VinylSplit ${VERSION}" > "${NOTES}"
+          fi
+
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" \
+              --clobber \
+              "${APPIMAGE}" \
+              "${TARBALL}" \
+              "${DEB}" \
+              "${SNAP}"
+            gh release edit "${GITHUB_REF_NAME}" \
+              --title "VinylSplit ${VERSION}" \
+              --notes-file "${NOTES}"
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              --title "VinylSplit ${VERSION}" \
+              --notes-file "${NOTES}" \
+              "${APPIMAGE}" \
+              "${TARBALL}" \
+              "${DEB}" \
+              "${SNAP}"
+          fi
