@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import logging
 import sys
+from pathlib import Path
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from vinylsplit import __app_name__, __version__
@@ -13,9 +15,33 @@ from vinylsplit.core.container import Container
 from vinylsplit.core.logging_config import configure_logging
 from vinylsplit.core.settings import Settings
 from vinylsplit.metadata.session import WizardSession
+from vinylsplit.resources import RESOURCES_DIR
 from vinylsplit.wizard import VinylSplitWizard
 
 logger = logging.getLogger(__name__)
+
+
+def load_app_icon() -> QIcon:
+    """Load the VinylSplit application icon from packaged resources."""
+    icon = QIcon()
+    icons_dir = RESOURCES_DIR / "icons"
+    for name in ("vinylsplit-512.png", "vinylsplit.png"):
+        path = icons_dir / name
+        if path.is_file():
+            icon.addFile(str(path))
+    if icon.isNull():
+        # Fallback for editable installs / packaging tree
+        for candidate in (
+            Path(__file__).resolve().parents[2]
+            / "packaging"
+            / "linux"
+            / "vinylsplit.png",
+            Path(__file__).resolve().parents[2] / "assets" / "vinylsplit.png",
+        ):
+            if candidate.is_file():
+                icon.addFile(str(candidate))
+                break
+    return icon
 
 
 def create_application(argv: list[str] | None = None) -> QApplication:
@@ -43,6 +69,9 @@ def create_application(argv: list[str] | None = None) -> QApplication:
     app.setApplicationVersion(__version__)
     app.setOrganizationName(Settings.ORGANIZATION)
     app.setOrganizationDomain("vinylsplit.github.io")
+    icon = load_app_icon()
+    if not icon.isNull():
+        app.setWindowIcon(icon)
     return app
 
 
@@ -56,7 +85,11 @@ def create_wizard(container: Container | None = None) -> VinylSplitWizard:
     Returns:
         The configured :class:`~vinylsplit.wizard.VinylSplitWizard`.
     """
-    return VinylSplitWizard(container or Container())
+    wizard = VinylSplitWizard(container or Container())
+    icon = load_app_icon()
+    if not icon.isNull():
+        wizard.set_window_icon(icon)
+    return wizard
 
 
 def main(argv: list[str] | None = None) -> int:
