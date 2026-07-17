@@ -51,7 +51,7 @@ the host `/tmp`.
 ## Install from tarball
 
 ```bash
-tar -xzf dist/vinylsplit-1.0.0-linux-x86_64.tar.gz -C ~/.local
+tar -xzf dist/vinylsplit-1.1.0-linux-x86_64.tar.gz -C ~/.local
 ~/.local/vinylsplit/vinylsplit
 ```
 
@@ -68,16 +68,16 @@ use the full executable path.
 ## Run AppImage
 
 ```bash
-chmod +x dist/vinylsplit-1.0.0-linux-x86_64.AppImage
-./dist/vinylsplit-1.0.0-linux-x86_64.AppImage
+chmod +x dist/vinylsplit-1.1.0-linux-x86_64.AppImage
+./dist/vinylsplit-1.1.0-linux-x86_64.AppImage
 ```
 
 ## Install from .deb
 
 ```bash
-sudo apt install ./dist/vinylsplit_1.0.0-1_amd64.deb
+sudo apt install ./dist/vinylsplit_1.1.0-1_amd64.deb
 # or:
-sudo dpkg -i dist/vinylsplit_1.0.0-1_amd64.deb
+sudo dpkg -i dist/vinylsplit_1.1.0-1_amd64.deb
 ```
 
 This installs:
@@ -100,7 +100,7 @@ sudo apt remove vinylsplit
 Local install (before store publication):
 
 ```bash
-sudo snap install --dangerous --classic dist/vinylsplit_1.0.0_amd64.snap
+sudo snap install --dangerous --classic dist/vinylsplit_1.1.0_amd64.snap
 ```
 
 From the Snap Store (after classic confinement is approved):
@@ -120,7 +120,7 @@ sudo snap remove vinylsplit
 1. Create an account at https://snapcraft.io
 2. `snapcraft login` and `snapcraft register vinylsplit`
 3. Request classic confinement on the Snapcraft forum (`store-requests`) — required because of Audacity `/tmp` pipes
-4. `snapcraft upload --release=edge dist/vinylsplit_1.0.0_amd64.snap`
+4. `snapcraft upload --release=edge dist/vinylsplit_1.1.0_amd64.snap`
 5. Promote to `stable` after review
 
 ## End-user prerequisites

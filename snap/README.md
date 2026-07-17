@@ -18,7 +18,7 @@ Output: `dist/vinylsplit_<version>_amd64.snap`
 ## Local install
 
 ```bash
-sudo snap install --dangerous --classic dist/vinylsplit_1.0.0_amd64.snap
+sudo snap install --dangerous --classic dist/vinylsplit_1.1.0_amd64.snap
 vinylsplit
 ```
 
@@ -33,7 +33,7 @@ vinylsplit
 5. After approval:
 
 ```bash
-snapcraft upload --release=edge dist/vinylsplit_1.0.0_amd64.snap
+snapcraft upload --release=edge dist/vinylsplit_1.1.0_amd64.snap
 # later:
 snapcraft release vinylsplit <revision> stable
 ```

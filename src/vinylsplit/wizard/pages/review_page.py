@@ -118,7 +118,13 @@ class ReviewPage(WizardPageBase):
 
     def initializePage(self) -> None:
         super().initializePage()
-        if self.session.layout_review_refreshed:
+        if self.session.skipped_region_generation and self.session.layout_review_refreshed:
+            self._status_label.setText(
+                "Using existing Audacity labels (generation was skipped). "
+                "Optional: adjust in Audacity and press Refresh, or continue to export."
+            )
+            self._refresh_review_table_from_session()
+        elif self.session.layout_review_refreshed:
             self._refresh_review_table_from_session()
         else:
             self._status_label.setText(

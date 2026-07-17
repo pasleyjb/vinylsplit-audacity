@@ -123,9 +123,11 @@ class _ReleaseFetchWorker(QThread):
 class ArtistSearchPage(WizardPageBase):
     """Collect artist and album search terms and query MusicBrainz."""
 
-    PAGE_ID: ClassVar[int] = PageId.ARTIST_SEARCH
-    PAGE_TITLE: ClassVar[str] = "Artist & Album Search"
-    PAGE_SUBTITLE: ClassVar[str] = "Enter the artist and album you are digitizing."
+    PAGE_ID: ClassVar[int] = PageId.RELEASE
+    PAGE_TITLE: ClassVar[str] = "Find release"
+    PAGE_SUBTITLE: ClassVar[str] = (
+        "Search MusicBrainz, pick the pressing that matches your vinyl."
+    )
 
     def __init__(
         self,
@@ -144,9 +146,9 @@ class ArtistSearchPage(WizardPageBase):
     def build_content(self) -> None:
         self._layout.addWidget(
             self._create_info_banner(
-                "<b>Search MusicBrainz</b><br>"
-                "Enter the artist and album you are digitizing, then select the "
-                "release that matches your vinyl pressing."
+                "<b>Populate metadata & pick a release</b><br>"
+                "Search MusicBrainz (fields may be prefilled from your file). "
+                "Select the matching release in the table, then click <b>Next</b>."
             )
         )
 
@@ -196,6 +198,7 @@ class ArtistSearchPage(WizardPageBase):
     def initializePage(self) -> None:
         super().initializePage()
         self._restore_search_fields()
+        self._maybe_auto_search()
         self.completeChanged.emit()
 
     def _restore_search_fields(self) -> None:
@@ -204,6 +207,40 @@ class ArtistSearchPage(WizardPageBase):
             self.artist_input.setText(self.session.last_artist_query)
         if not self.album_input.text() and self.session.last_album_query:
             self.album_input.setText(self.session.last_album_query)
+
+        seed = self.session.metadata_seed_source
+        if seed == "file" and self.session.local_tags is not None:
+            tags = self.session.local_tags
+            if tags.has_search_seed:
+                self._status_label.setText(
+                    f"Prefill from file ({tags.source}): {tags.summary_line()}"
+                )
+        elif seed == "audacity" and (
+            self.session.last_artist_query or self.session.last_album_query
+        ):
+            self._status_label.setText(
+                "Prefill from Audacity track name — review and search."
+            )
+
+    def _maybe_auto_search(self) -> None:
+        """Run a MusicBrainz search when both fields were seeded and no results yet."""
+        if self.session.search_results:
+            return
+        if self.session.selected_release is not None:
+            return
+        if self.session.metadata_seed_source not in {"file", "audacity"}:
+            return
+
+        artist = self.artist_input.text().strip()
+        album = self.album_input.text().strip()
+        if not artist and not album:
+            return
+
+        # Avoid re-entrancy when the user navigates back mid-search.
+        if self._search_worker is not None and self._search_worker.isRunning():
+            return
+
+        self._on_search_clicked()
 
     def _on_search_clicked(self) -> None:
         if self._search_worker is not None and self._search_worker.isRunning():

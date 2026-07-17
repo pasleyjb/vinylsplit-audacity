@@ -4,8 +4,8 @@
 # Usage (from repo root, after dist/vinylsplit exists):
 #   ./packaging/linux/build-snap.sh
 #
-# Prefers `snapcraft` when available; otherwise assembles a valid .snap with
-# mksquashfs (no LXD/Multipass required).
+# Assembles a valid .snap with mksquashfs from the PyInstaller bundle
+# (no LXD/Multipass required). Set USE_SNAPCRAFT=1 to try snapcraft first.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -75,29 +75,13 @@ if [[ -f "${SNAP_DIR}/snapcraft.yaml" ]]; then
     fi
 fi
 
-if command -v snapcraft >/dev/null 2>&1; then
-    echo "==> Using snapcraft"
-    (
-        cd "${ROOT}"
-        # Destructive clean of previous prime/stage only for this project
-        snapcraft clean --destructive-mode 2>/dev/null || true
-        snapcraft pack --destructive-mode --output "${SNAP_PATH}" 2>/dev/null \
-            || snapcraft --destructive-mode
-    )
-    # snapcraft may write into the project root; move if needed
-    if [[ ! -f "${SNAP_PATH}" ]]; then
-        found="$(find "${ROOT}" -maxdepth 2 -name "${SNAP_FILENAME}" -type f | head -1 || true)"
-        if [[ -n "${found}" ]]; then
-            mv -f "${found}" "${SNAP_PATH}"
-        fi
-    fi
-else
-    echo "==> snapcraft not found; assembling snap with mksquashfs"
+build_with_mksquashfs() {
     if ! command -v mksquashfs >/dev/null 2>&1; then
         echo "mksquashfs is required (package: squashfs-tools)." >&2
         exit 1
     fi
 
+    echo "==> Assembling snap with mksquashfs"
     rm -rf "${PRIME_DIR}"
     mkdir -p \
         "${PRIME_DIR}/meta/gui" \
@@ -118,8 +102,8 @@ else
     if [[ -f "${SNAP_DIR}/gui/vinylsplit.metainfo.xml" ]]; then
         install -m 644 "${SNAP_DIR}/gui/vinylsplit.metainfo.xml" \
             "${PRIME_DIR}/usr/share/metainfo/io.github.pasleyjb.vinylsplit.metainfo.xml"
-        # Keep AppStream release version aligned
-        sed -i "s/version=\"[0-9.]*\"/version=\"${VERSION}\"/" \
+        # Keep AppStream release version aligned (first release version= only)
+        sed -i "0,/version=\"[0-9.]*\"/s//version=\"${VERSION}\"/" \
             "${PRIME_DIR}/usr/share/metainfo/io.github.pasleyjb.vinylsplit.metainfo.xml" || true
     fi
 
@@ -161,7 +145,6 @@ links:
 EOF
 
     rm -f "${SNAP_PATH}"
-    # Match snapcraft defaults closely enough for local install + store upload
     mksquashfs "${PRIME_DIR}" "${SNAP_PATH}" \
         -noappend \
         -comp lzo \
@@ -170,6 +153,27 @@ EOF
         -no-fragments
 
     rm -rf "${PRIME_DIR}"
+}
+
+if [[ "${USE_SNAPCRAFT:-0}" == "1" ]] && command -v snapcraft >/dev/null 2>&1; then
+    echo "==> Using snapcraft (USE_SNAPCRAFT=1)"
+    if (
+        cd "${ROOT}"
+        snapcraft clean --destructive-mode 2>/dev/null || true
+        snapcraft pack --destructive-mode --output "${SNAP_PATH}"
+    ); then
+        if [[ ! -f "${SNAP_PATH}" ]]; then
+            found="$(find "${ROOT}" -maxdepth 2 -name "${SNAP_FILENAME}" -type f | head -1 || true)"
+            if [[ -n "${found}" ]]; then
+                mv -f "${found}" "${SNAP_PATH}"
+            fi
+        fi
+    else
+        echo "==> snapcraft failed; falling back to mksquashfs"
+        build_with_mksquashfs
+    fi
+else
+    build_with_mksquashfs
 fi
 
 if [[ ! -f "${SNAP_PATH}" ]]; then

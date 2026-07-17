@@ -14,9 +14,6 @@ from vinylsplit.wizard.pages import (
     ArtistSearchPage,
     FinishPage,
     GenerateAlbumLayoutPage,
-    ReleaseSelectionPage,
-    ReviewPage,
-    TrackListPage,
     WelcomePage,
 )
 from vinylsplit.wizard.pages.page_ids import PageId
@@ -26,11 +23,12 @@ _logger = logging.getLogger(__name__)
 
 
 class VinylSplitWizard(QWizard):
-    """Seven-step wizard guiding the vinyl digitization workflow.
+    """Four-step wizard for the vinyl digitization workflow.
 
-    Pages are registered in workflow order. Each page is a reusable
-    :class:`~vinylsplit.wizard.pages.base.WizardPageBase` subclass that
-    receives the dependency injection container.
+    1. Open album (file + Audacity)
+    2. Find release (MusicBrainz)
+    3. Align lattice & hand off to Audacity
+    4. Final approval & export (or start a new album)
     """
 
     def __init__(self, container: Container, parent: QWizard | None = None) -> None:
@@ -44,14 +42,16 @@ class VinylSplitWizard(QWizard):
         self.setOption(QWizard.WizardOption.NoBackButtonOnStartPage, True)
         self.setOption(QWizard.WizardOption.NoCancelButton, False)
         self.setOption(QWizard.WizardOption.NoDefaultButton, False)
-        self.setMinimumSize(920, 680)
+        self.setMinimumSize(960, 720)
         apply_wizard_theme(self)
 
         self._register_pages()
-        self._configure_navigation()
+        self.setStartId(PageId.OPEN)
         self.currentIdChanged.connect(self._on_page_changed)
 
-        self._logger.info("Wizard initialized with %d pages", PageId.FINISH + 1)
+        self._logger.info(
+            "Wizard initialized with streamlined flow: Open → Release → Align → Export"
+        )
 
     @property
     def container(self) -> Container:
@@ -63,33 +63,27 @@ class VinylSplitWizard(QWizard):
         """Wizard session state for the active workflow."""
         return self._container.session
 
+    def restart_for_new_album(self) -> None:
+        """Clear session state and return to the Open page."""
+        self.session.reset()
+        self.restart()
+        self._logger.info("Restarted wizard for a new album")
+
     def _register_pages(self) -> None:
-        """Create and register all wizard pages."""
+        """Create and register the four streamlined pages."""
         page_classes = [
             WelcomePage,
             ArtistSearchPage,
-            ReleaseSelectionPage,
-            TrackListPage,
             GenerateAlbumLayoutPage,
-            ReviewPage,
             FinishPage,
         ]
-
         for page_cls in page_classes:
             page = page_cls(self._container)
             self.setPage(page_cls.PAGE_ID, page)
 
-    def _configure_navigation(self) -> None:
-        """Set linear page flow for v0.5.
-
-        Pages use sequential :class:`~vinylsplit.wizard.pages.page_ids.PageId`
-        values so QWizard's default ``nextId()`` advances 0 → 6 in order.
-        """
-        self.setStartId(PageId.WELCOME)
-
     def _on_page_changed(self, page_id: int) -> None:
         """Refresh wizard button labels when the active page changes."""
-        if page_id == PageId.FINISH:
+        if page_id == PageId.EXPORT:
             finish_button = self.button(QWizard.WizardButton.FinishButton)
             finish_button.setText(
                 finish_button_label(export_completed=self.session.export_completed)

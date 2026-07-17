@@ -64,7 +64,7 @@ def test_finish_page_reports_layout_summary(container, session) -> None:
     summary = page._summary_label.text()
     assert "Pink Floyd" in summary
     assert "The Dark Side of the Moon" in summary
-    assert "Regions created:</b> 2" in summary
+    assert "Regions:</b> 2" in summary
     assert "Export Tracks" in summary or "Choose a format" in summary
 
 

@@ -6,12 +6,24 @@ from enum import IntEnum
 
 
 class PageId(IntEnum):
-    """Ordered wizard page identifiers."""
+    """Streamlined wizard page identifiers (0 → 3).
 
-    WELCOME = 0
-    ARTIST_SEARCH = 1
-    RELEASE_SELECTION = 2
-    TRACK_LIST = 3
-    GENERATE_ALBUM_LAYOUT = 4
-    REVIEW = 5
-    FINISH = 6
+    Flow:
+      Open album → Find release → Align & hand off → Export
+    """
+
+    OPEN = 0
+    RELEASE = 1
+    ALIGN = 2
+    EXPORT = 3
+
+    # Backward-compatible aliases used by older page modules/tests.
+    WELCOME = OPEN
+    ARTIST_SEARCH = RELEASE
+    GENERATE_ALBUM_LAYOUT = ALIGN
+    FINISH = EXPORT
+
+    # Standalone/legacy pages (not registered in the main wizard).
+    RELEASE_SELECTION = 10
+    TRACK_LIST = 11
+    REVIEW = 12

@@ -1,6 +1,6 @@
 name: vinylsplit
 base: core24
-version: '1.0.0'
+version: '1.1.0'
 summary: Vinyl digitization helper for Audacity
 description: |
   VinylSplit for Audacity helps digitize vinyl records by generating a
@@ -22,9 +22,10 @@ grade: stable
 confinement: classic
 compression: lzo
 
-architectures:
-  - build-on: amd64
-    build-for: amd64
+platforms:
+  amd64:
+    build-on: [amd64]
+    build-for: [amd64]
 
 apps:
   vinylsplit:

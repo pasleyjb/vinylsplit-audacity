@@ -23,6 +23,8 @@ class Settings:
     KEY_WINDOW_STATE = "window/state"
     KEY_LAST_ARTIST = "wizard/last_artist"
     KEY_LAST_ALBUM = "wizard/last_album"
+    KEY_LAST_OPEN_DIR = "wizard/last_open_dir"
+    KEY_LAST_EXPORT_DIR = "wizard/last_export_dir"
     KEY_LOG_LEVEL = "logging/level"
 
     def __init__(self) -> None:

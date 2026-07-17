@@ -31,6 +31,11 @@
   </provides>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="1.1.0" date="2026-07-17">
+      <description>
+        <p>Streamlined 4-step wizard, waveform lattice editing, open-file metadata seed, and sticky directories.</p>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-07-16">
       <description>
         <p>First stable release: full vinyl digitization workflow with Snap, Debian, AppImage, and tarball packages.</p>

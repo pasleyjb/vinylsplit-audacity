@@ -68,6 +68,10 @@ def test_default_session_fields() -> None:
     assert session.search_results == []
     assert session.last_artist_query == ""
     assert session.last_album_query == ""
+    assert session.source_audio_path is None
+    assert session.local_tags is None
+    assert session.audio_imported_to_audacity is False
+    assert session.metadata_seed_source == ""
 
 
 def test_set_audacity_connected() -> None:
@@ -78,6 +82,78 @@ def test_set_audacity_connected() -> None:
 
     session.set_audacity_connected(False)
     assert session.audacity_connected is False
+
+
+def test_set_layout_transform_offset() -> None:
+    session = WizardSession()
+    session.set_selected_release(_sample_release())
+    assert session.album_layout is not None
+    base_end = session.album_layout.regions[0].end_seconds
+
+    session.set_layout_transform(offset_seconds=30.0)
+
+    assert session.layout_offset_seconds == 30.0
+    assert session.album_layout is not None
+    assert session.album_layout.regions[0].start_seconds == 30.0
+    assert session.album_layout.regions[0].end_seconds == base_end + 30.0
+    assert session.initial_regions_generated is False
+
+
+def test_set_edited_layout() -> None:
+    from vinylsplit.labels.layout_engine import AlbumLayout, TrackRegion
+
+    session = WizardSession()
+    session.set_selected_release(_sample_release())
+    edited = AlbumLayout(
+        release_id="x",
+        artist_name="A",
+        album_title="B",
+        regions=(
+            TrackRegion(0, "01", "One", "01 One", 12.0, 50.0),
+            TrackRegion(1, "02", "Two", "02 Two", 50.0, 90.0),
+        ),
+    )
+    session.set_edited_layout(edited)
+
+    assert session.album_layout is edited
+    assert session.layout_offset_seconds == 12.0
+    assert session.initial_regions_generated is False
+
+
+def test_mark_using_existing_regions() -> None:
+    session = WizardSession()
+    session.mark_using_existing_regions(5)
+
+    assert session.skipped_region_generation is True
+    assert session.initial_regions_generated is True
+    assert session.layout_review_refreshed is True
+    assert session.regions_created_count == 5
+    assert session.ready_for_export() is True
+
+
+def test_set_source_audio_seeds_search() -> None:
+    from vinylsplit.metadata.local_tags import LocalAudioTags
+
+    session = WizardSession()
+    path = Path("/tmp/capture.flac")
+    tags = LocalAudioTags(
+        path=path,
+        artist="Miles Davis",
+        album="Kind of Blue",
+        source="tags",
+    )
+
+    session.set_source_audio(path, tags, seed_source="file")
+
+    assert session.source_audio_path == path
+    assert session.local_tags is tags
+    assert session.last_artist_query == "Miles Davis"
+    assert session.last_album_query == "Kind of Blue"
+    assert session.metadata_seed_source == "file"
+    assert session.audio_imported_to_audacity is False
+
+    session.mark_audio_imported()
+    assert session.audio_imported_to_audacity is True
 
 
 def test_set_selected_release_populates_track_list_and_layout() -> None:
@@ -167,14 +243,13 @@ def test_validation_errors_deduplicated() -> None:
     assert session.has_validation_errors() is False
 
 
-def test_ready_for_export_requires_refresh() -> None:
+def test_ready_for_export_after_regions_written() -> None:
     session = WizardSession()
     session.set_selected_release(_sample_release())
-    session.mark_initial_regions_generated(2)
 
     assert session.ready_for_export() is False
 
-    session.mark_layout_review_refreshed()
+    session.mark_initial_regions_generated(2)
     assert session.ready_for_export() is True
 
 

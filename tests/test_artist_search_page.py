@@ -77,6 +77,38 @@ def _sample_release() -> Release:
     )
 
 
+def test_search_page_prefills_from_session_seed(
+    qtbot, container, session, musicbrainz_client
+) -> None:
+    from pathlib import Path
+
+    from vinylsplit.metadata.local_tags import LocalAudioTags
+
+    session.last_artist_query = "Pink Floyd"
+    session.last_album_query = "Animals"
+    session.metadata_seed_source = "file"
+    session.local_tags = LocalAudioTags(
+        path=Path("/tmp/a.flac"),
+        artist="Pink Floyd",
+        album="Animals",
+        source="tags",
+    )
+    musicbrainz_client.search_releases.return_value = []
+
+    page = ArtistSearchPage(container, musicbrainz_client=musicbrainz_client)
+    qtbot.addWidget(page)
+    page.initializePage()
+
+    assert page.artist_input.text() == "Pink Floyd"
+    assert page.album_input.text() == "Animals"
+    # Auto-search runs on a worker thread
+    qtbot.waitUntil(
+        lambda: musicbrainz_client.search_releases.called,
+        timeout=2000,
+    )
+    musicbrainz_client.search_releases.assert_called_with("Pink Floyd", "Animals")
+
+
 def test_search_page_requires_input_before_search(
     search_page: ArtistSearchPage,
 ) -> None:

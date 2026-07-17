@@ -83,9 +83,11 @@ class _ExportWorker(QThread):
 class FinishPage(WizardPageBase):
     """Export tagged tracks using the final Audacity region layout."""
 
-    PAGE_ID: ClassVar[int] = PageId.FINISH
-    PAGE_TITLE: ClassVar[str] = "Finish"
-    PAGE_SUBTITLE: ClassVar[str] = "Export your tracks with metadata and artwork."
+    PAGE_ID: ClassVar[int] = PageId.EXPORT
+    PAGE_TITLE: ClassVar[str] = "Export"
+    PAGE_SUBTITLE: ClassVar[str] = (
+        "Final approval — export tagged tracks, or start a new album."
+    )
 
     def __init__(
         self,
@@ -158,10 +160,21 @@ class FinishPage(WizardPageBase):
 
         self._layout.addWidget(content_row)
 
+        action_row = QHBoxLayout()
         self._export_button = QPushButton()
         style_primary_button(self._export_button, "Export Tracks")
         self._export_button.clicked.connect(self._on_export_clicked)
-        self._layout.addWidget(self._export_button)
+        action_row.addWidget(self._export_button)
+
+        self._new_album_button = QPushButton()
+        style_secondary_button(self._new_album_button, "Open new album")
+        self._new_album_button.setToolTip(
+            "Clear this session and return to Open album for the next record."
+        )
+        self._new_album_button.clicked.connect(self._on_new_album_clicked)
+        action_row.addWidget(self._new_album_button)
+        action_row.addStretch()
+        self._layout.addLayout(action_row)
 
         self._progress_bar = QProgressBar()
         self._progress_bar.setRange(0, 100)
@@ -243,10 +256,10 @@ class FinishPage(WizardPageBase):
             self._hint_label.setVisible(True)
 
         self._summary_label.setText(
-            "<b>Album Layout Complete</b><br><br>"
+            "<b>Final approval &amp; export</b><br><br>"
             f"<b>Artist:</b> {release.artist_name}<br>"
             f"<b>Album:</b> {release.title}<br>"
-            f"<b>Regions created:</b> {regions_created}<br>"
+            f"<b>Regions:</b> {regions_created}<br>"
             f"<b>Layout generation time:</b> {elapsed_text}<br><br>"
             f"{export_note}"
         )
@@ -309,7 +322,15 @@ class FinishPage(WizardPageBase):
 
     def _on_browse_clicked(self) -> None:
         current = self.session.output_directory
-        start_dir = str(current) if current is not None else str(Path.home())
+        if current is not None and current.is_dir():
+            start_dir = str(current)
+        else:
+            settings = self.container.settings
+            stored = settings.get(settings.KEY_LAST_EXPORT_DIR, "")
+            if isinstance(stored, str) and stored and Path(stored).is_dir():
+                start_dir = stored
+            else:
+                start_dir = str(Path.home())
         selected = QFileDialog.getExistingDirectory(
             self,
             "Choose Output Folder",
@@ -319,12 +340,28 @@ class FinishPage(WizardPageBase):
             return
         output_directory = Path(selected)
         self.session.set_output_directory(output_directory)
+        settings = self.container.settings
+        settings.set(settings.KEY_LAST_EXPORT_DIR, str(output_directory))
+        settings.sync()
         self._output_path_label.setText(str(output_directory))
 
     def _on_export_clicked(self) -> None:
         if self._export_worker is not None and self._export_worker.isRunning():
             return
         self._start_async_export()
+
+    def _on_new_album_clicked(self) -> None:
+        """Reset the session and restart the wizard at Open album."""
+        wizard = self.wizard()
+        if wizard is None:
+            self.session.reset()
+            return
+        restart = getattr(wizard, "restart_for_new_album", None)
+        if callable(restart):
+            restart()
+            return
+        self.session.reset()
+        wizard.restart()
 
     def _selected_export_format(self) -> ExportFormat | None:
         return resolve_export_format(self._format_combo.currentData())

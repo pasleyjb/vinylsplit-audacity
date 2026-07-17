@@ -90,5 +90,63 @@ def test_generate_regions_updates_session(
 
     assert session.initial_regions_generated is True
     assert session.regions_created_count == 2
-    assert session.layout_review_refreshed is False
+    assert session.layout_review_refreshed is True
+    assert session.skipped_region_generation is False
     assert layout_page.isComplete() is True
+    assert session.ready_for_export() is True
+
+
+def test_layout_edit_updates_preview(
+    layout_page: GenerateAlbumLayoutPage, session: WizardSession
+) -> None:
+    from vinylsplit.labels.layout_engine import AlbumLayout, TrackRegion
+
+    session.set_selected_release(_sample_release())
+    layout_page.initializePage()
+    assert layout_page._preview_table.item(0, 2).text() == "00:00 → 01:30"
+
+    edited = AlbumLayout(
+        release_id="release-mbid-1",
+        artist_name="Pink Floyd",
+        album_title="The Dark Side of the Moon",
+        regions=(
+            TrackRegion(0, "01", "Speak to Me", "01 Speak to Me", 30.0, 120.0),
+            TrackRegion(1, "02", "Breathe", "02 Breathe", 120.0, 283.0),
+        ),
+    )
+    layout_page._on_layout_changed(edited)
+
+    assert session.layout_offset_seconds == 30.0
+    assert layout_page._preview_table.item(0, 2).text() == "00:30 → 02:00"
+    assert layout_page.isComplete() is False
+
+
+def test_skip_uses_existing_labels(
+    layout_page: GenerateAlbumLayoutPage, session: WizardSession
+) -> None:
+    session.set_selected_release(_sample_release())
+    layout_page.initializePage()
+
+    fake_labels = [
+        {"title": "01 Speak to Me", "start": 0.0, "end": 90.0},
+        {"title": "02 Breathe", "start": 90.0, "end": 253.0},
+    ]
+    layout_page.apply_skip_regions(fake_labels)
+
+    assert session.skipped_region_generation is True
+    assert session.initial_regions_generated is True
+    assert session.layout_review_refreshed is True
+    assert session.regions_created_count == 2
+    assert layout_page.isComplete() is True
+    assert "existing" in layout_page._status_label.text().lower()
+
+
+def test_skip_with_no_labels_does_not_complete(
+    layout_page: GenerateAlbumLayoutPage, session: WizardSession
+) -> None:
+    session.set_selected_release(_sample_release())
+    layout_page.initializePage()
+    layout_page.apply_skip_regions([])
+
+    assert session.initial_regions_generated is False
+    assert layout_page.isComplete() is False

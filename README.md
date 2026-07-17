@@ -1,12 +1,12 @@
 # VinylSplit for Audacity
 
-**Version 1.0.0** — Stable release
+**Version 1.1.0** — Stable release
 
 VinylSplit for Audacity helps users digitize vinyl records by generating a complete album layout in Audacity from MusicBrainz metadata, then exporting tagged tracks with artwork.
 
 ## Status
 
-Version 1.0.0 is the first stable release: MusicBrainz lookup, region layout generation, layout review, and export with embedded metadata and cover art into album subfolders, plus Linux Snap/Debian/AppImage packages.
+Version 1.1.0 streamlines the wizard with waveform lattice editing. Version 1.0.0 was the first stable release: MusicBrainz lookup, region layout generation, layout review, and export with embedded metadata and cover art into album subfolders, plus Linux Snap/Debian/AppImage packages.
 
 ## Requirements
 
@@ -48,10 +48,10 @@ Outputs land in `dist/`.
 
 ```bash
 # Debian / Ubuntu
-sudo apt install ./dist/vinylsplit_1.0.0-1_amd64.deb
+sudo apt install ./dist/vinylsplit_1.1.0-1_amd64.deb
 
 # Snap (classic — required for Audacity mod-script-pipe)
-sudo snap install --dangerous --classic ./dist/vinylsplit_1.0.0_amd64.snap
+sudo snap install --dangerous --classic ./dist/vinylsplit_1.1.0_amd64.snap
 ```
 
 See [packaging/linux/README.md](packaging/linux/README.md) for install instructions and
